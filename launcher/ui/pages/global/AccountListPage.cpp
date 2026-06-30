@@ -47,6 +47,7 @@
 #include "ui/dialogs/ChooseOfflineNameDialog.h"
 #include "ui/dialogs/CustomMessageBox.h"
 #include "ui/dialogs/MSALoginDialog.h"
+#include "ui/dialogs/YggdrasilLoginDialog.h"
 
 #include "Application.h"
 
@@ -264,5 +265,21 @@ void AccountListPage::on_actionMoveDown_triggered()
     if (selection.size() > 0) {
         QModelIndex selected = selection.first();
         m_accounts->moveAccount(selected, 1);
+    }
+}
+
+void AccountListPage::on_actionAddYggdrasil_triggered()
+{
+    YggdrasilLoginDialog dialog(this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    if (const MinecraftAccountPtr account = MinecraftAccount::createYggdrasil(dialog.getUsername(), dialog.getPassword(), dialog.getServerUrl())) {
+        account->login()->start();
+        m_accounts->addAccount(account);
+        if (m_accounts->count() == 1) {
+            m_accounts->setDefaultAccount(account);
+        }
     }
 }

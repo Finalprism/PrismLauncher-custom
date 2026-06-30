@@ -86,6 +86,9 @@ class MinecraftAccount : public QObject, public Usable {
     static MinecraftAccountPtr createBlankMSA();
 
     static MinecraftAccountPtr createOffline(const QString& username);
+    static MinecraftAccountPtr createYggdrasil(const QString& username, const QString& password, const QString& serverUrl = QString());
+
+    static MinecraftAccountPtr createYggdrasil(const QString& username, const QString& password, const QString& serverUrl = QString());
 
     static MinecraftAccountPtr loadFromJsonV3(const QJsonObject& json);
 
@@ -127,7 +130,16 @@ class MinecraftAccount : public QObject, public Usable {
                 return "msa";
             } break;
             case AccountType::Offline: {
+            case AccountType::Yggdrasil: {
+                return "yggdrasil";
+            } break;
                 return "offline";
+            case AccountType::Yggdrasil: {
+                return "yggdrasil";
+            } break;
+            } break;
+            case AccountType::Yggdrasil: {
+                return "yggdrasil";
             } break;
             default: {
                 return "unknown";

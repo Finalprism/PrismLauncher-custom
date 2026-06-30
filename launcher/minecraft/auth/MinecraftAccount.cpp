@@ -295,3 +295,20 @@ QUuid MinecraftAccount::uuidFromUsername(QString username)
 
     return QUuid::fromRfc4122(digest);
 }
+
+MinecraftAccountPtr MinecraftAccount::createYggdrasil(const QString& username, const QString& password, const QString& serverUrl)
+{
+    auto account = makeShared<MinecraftAccount>();
+    account->data.type = AccountType::Yggdrasil;
+    account->data.yggdrasilToken.token = "0";
+    account->data.yggdrasilToken.validity = Validity::Certain;
+    account->data.yggdrasilToken.issueInstant = QDateTime::currentDateTimeUtc();
+    account->data.yggdrasilToken.extra["userName"] = username;
+    account->data.yggdrasilToken.extra["clientToken"] = QUuid::createUuid().toString(QUuid::Id128);
+    account->data.yggdrasilToken.extra["password"] = password;
+    account->data.yggdrasilToken.extra["serverUrl"] = serverUrl;
+    account->data.minecraftProfile.id = uuidFromUsername(username).toString(QUuid::Id128);
+    account->data.minecraftProfile.name = username;
+    account->data.minecraftProfile.validity = Validity::Certain;
+    return account;
+}

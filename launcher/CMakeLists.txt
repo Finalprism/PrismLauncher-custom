@@ -245,6 +245,8 @@ set(MINECRAFT_SOURCES
     minecraft/auth/steps/XboxAuthorizationStep.cpp
     minecraft/auth/steps/XboxAuthorizationStep.h
     minecraft/auth/steps/XboxUserStep.cpp
+    minecraft/auth/steps/YggdrasilStep.cpp
+    minecraft/auth/steps/YggdrasilStep.h
     minecraft/auth/steps/XboxUserStep.h
 
     minecraft/update/AssetUpdateTask.h
@@ -1066,6 +1068,9 @@ SET(LAUNCHER_SOURCES
     ui/dialogs/ImportResourceDialog.cpp
     ui/dialogs/ImportResourceDialog.h
     ui/dialogs/MSALoginDialog.cpp
+    ui/dialogs/YggdrasilLoginDialog.cpp
+    ui/dialogs/YggdrasilLoginDialog.h
+    ui/dialogs/YggdrasilLoginDialog.ui
     ui/dialogs/MSALoginDialog.h
     ui/dialogs/NetworkJobFailedDialog.cpp
     ui/dialogs/NetworkJobFailedDialog.h

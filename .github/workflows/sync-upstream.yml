@@ -66,10 +66,51 @@ jobs:
           git push origin HEAD
           echo "已推送，本次同步完成。"
 
-  build:
-    name: 同步后自动构建
+  build-windows:
+    name: 构建 Windows 产物（MSVC x64）
     needs: sync
-    uses: ./.github/workflows/build.yml
-    secrets: inherit
-    with:
-      build-type: Release
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: bash
+    env:
+      ARTIFACT_NAME: Windows-MSVC-Qt6
+      BUILD_PLATFORM: official
+      BUILD_TYPE: Release
+      CMAKE_PRESET: windows_msvc
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Setup dependencies
+        id: setup-dependencies
+        uses: ./.github/actions/setup-dependencies
+        with:
+          build-type: ${{ env.BUILD_TYPE }}
+          artifact-name: Windows-MSVC
+          vcvars-arch: amd64
+          qt-version: 6.10.2
+
+      - name: Configure project
+        run: cmake --preset "$CMAKE_PRESET"
+
+      - name: Run build
+        run: cmake --build --preset "$CMAKE_PRESET" --config "$BUILD_TYPE"
+
+      - name: Run tests
+        run: ctest --preset "$CMAKE_PRESET" --build-config "$BUILD_TYPE"
+
+      - name: Get short version
+        id: short-version
+        run: echo "version=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Package (Windows)
+        uses: ./.github/actions/package/windows
+        env:
+          CI_HAS_ACCESS_TO_AZURE: ${{ vars.CI_HAS_ACCESS_TO_AZURE || '' }}
+        with:
+          version: ${{ steps.short-version.outputs.version }}
+          build-type: ${{ steps.setup-dependencies.outputs.build-type }}
+          artifact-name: Windows-MSVC

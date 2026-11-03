@@ -1,4 +1,4 @@
-name: 同步上游更新
+name: Yggdrasil 定制版：同步 · 构建 · 发布
 
 on:
   workflow_dispatch:

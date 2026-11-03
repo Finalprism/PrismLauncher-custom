@@ -25,6 +25,8 @@ struct AuthSession {
     QString user_type;
     // the actual launch mode for this session
     LaunchMode launchMode;
+    // Yggdrasil external auth server URL; empty unless the account is a Yggdrasil account
+    QString yggdrasilServer;
 };
 
 using AuthSessionPtr = std::shared_ptr<AuthSession>;

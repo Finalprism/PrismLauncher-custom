@@ -35,6 +35,7 @@
 
 #include "LauncherPartLaunch.h"
 
+#include <QFile>
 #include <QRegularExpression>
 #include <QStandardPaths>
 
@@ -94,6 +95,18 @@ void LauncherPartLaunch::executeTask()
 
     m_launchScript = instance->createLaunchScript(m_session, m_targetToJoin);
     QStringList args = instance->javaArguments();
+
+    // Yggdrasil external auth: make the game validate sessions against the external server
+    if (!m_session->yggdrasilServer.isEmpty()) {
+        const QString injectorPath = FS::PathCombine(APPLICATION->dataRoot(), QStringLiteral("authlib-injector.jar"));
+        if (QFile::exists(injectorPath)) {
+            args << QStringLiteral("-javaagent:%1=%2").arg(injectorPath, m_session->yggdrasilServer);
+        } else {
+            emit logLine("authlib-injector.jar is missing; external auth will not work. Remove and re-add the account to download it.\n",
+                         MessageLevel::Warning);
+        }
+    }
+
     QString allArgs = args.join(" ");
     emit logLine("Java arguments:\n  " + m_parent->censorPrivateInfo(allArgs) + "\n", MessageLevel::Launcher);
 

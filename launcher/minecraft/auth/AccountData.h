@@ -88,7 +88,7 @@ struct MinecraftProfile {
     Validity validity = Validity::None;
 };
 
-enum class AccountType { MSA, Offline };
+enum class AccountType { MSA, Offline, Yggdrasil };
 
 enum class AccountState { Unchecked, Offline, Working, Online, Disabled, Errored, Expired, Gone };
 
@@ -112,6 +112,10 @@ struct AccountData {
     Token mojangservicesToken;
 
     Token yggdrasilToken;
+    //! Yggdrasil external auth server base URL, e.g. https://littleskin.cn/api/yggdrasil
+    QString yggdrasilServer;
+    //! Password only lives in memory during login; never persisted.
+    QString yggdrasilPassword;
     MinecraftProfile minecraftProfile;
     MinecraftEntitlement minecraftEntitlement;
     Validity validity_ = Validity::None;

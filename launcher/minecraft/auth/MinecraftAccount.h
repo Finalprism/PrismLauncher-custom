@@ -87,6 +87,8 @@ class MinecraftAccount : public QObject, public Usable {
 
     static MinecraftAccountPtr createOffline(const QString& username);
 
+    static MinecraftAccountPtr createYggdrasil(const QString& server, const QString& username, const QString& password);
+
     static MinecraftAccountPtr loadFromJsonV3(const QJsonObject& json);
 
     static QUuid uuidFromUsername(QString username);
@@ -128,6 +130,10 @@ class MinecraftAccount : public QObject, public Usable {
             } break;
             case AccountType::Offline: {
                 return "offline";
+            } break;
+            case AccountType::Yggdrasil: {
+                // external auth behaves like a "mojang" session to the game; authlib-injector handles the rest
+                return "mojang";
             } break;
             default: {
                 return "unknown";

@@ -16,6 +16,8 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    outputs:
+      target: ${{ steps.target.outputs.ref }}
     steps:
       - name: 检出代码（完整历史）
         uses: actions/checkout@v4
@@ -114,3 +116,64 @@ jobs:
           version: ${{ steps.short-version.outputs.version }}
           build-type: ${{ steps.setup-dependencies.outputs.build-type }}
           artifact-name: Windows-MSVC
+
+  release:
+    name: 发布正式 Release
+    needs: [sync, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: 下载构建产物
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: 生成版本号与更新说明（引用上游 Release）
+        id: meta
+        env:
+          TARGET: ${{ needs.sync.outputs.target }}
+        run: |
+          if [[ "$TARGET" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            VERSION="$TARGET"
+            TAG="$TARGET-custom"
+          else
+            VERSION="$TARGET"
+            TAG="$TARGET-custom-$(date +%Y%m%d%H%M)"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          UPSTREAM_NOTES=$(gh release view "$TARGET" --repo PrismLauncher/PrismLauncher --json body -q .body 2>/dev/null) || UPSTREAM_NOTES=""
+          if [ -z "$UPSTREAM_NOTES" ]; then
+            UPSTREAM_NOTES="基于上游 \`$TARGET\` 构建，详见[上游提交历史](https://github.com/PrismLauncher/PrismLauncher/commits/$TARGET)。"
+          fi
+          {
+            echo "notes<<NOTES_EOF"
+            echo "$UPSTREAM_NOTES"
+            echo ""
+            echo "---"
+            echo ""
+            echo "### 本定制版新增"
+            echo "- **Yggdrasil 外置登录**（authlib-injector 兼容，支持 LittleSkin 等外置认证服务器）"
+            echo "- 新增外置账户登录对话框与账户页入口，新界面文案已中文化"
+            echo ""
+            echo "> 基于 [PrismLauncher/PrismLauncher](https://github.com/PrismLauncher/PrismLauncher) \`$TARGET\` 合并构建"
+            echo "NOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: 创建 Release
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          NOTES: ${{ steps.meta.outputs.notes }}
+        run: |
+          gh release delete "$TAG" --repo "${{ github.repository }}" -y 2>/dev/null || true
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/$TAG" 2>/dev/null || true
+          gh release create "$TAG" dist/* \
+            --repo "${{ github.repository }}" \
+            --title "Prism Launcher $VERSION（Yggdrasil 定制版）" \
+            --notes "$NOTES"

@@ -43,9 +43,9 @@
 #include <QPixmap>
 #include <QSet>
 #include <QUrl>
+#include "Application.h"
 #include "icons/IconUtils.h"
-
-#define MAX_SIZE 1024
+#include "settings/SettingsObject.h"
 
 IconList::IconList(const QStringList& builtinPaths, const QString& path, QObject* parent) : QAbstractListModel(parent)
 {
@@ -65,7 +65,10 @@ IconList::IconList(const QStringList& builtinPaths, const QString& path, QObject
 
     m_watcher.reset(new QFileSystemWatcher());
     m_isWatching = false;
-    connect(m_watcher.get(), &QFileSystemWatcher::directoryChanged, this, &IconList::directoryChanged);
+    connect(m_watcher.get(), &QFileSystemWatcher::directoryChanged, this, [this] {
+        // NOTE: we don't want the path of the subdir, but of the root dir
+        directoryChanged(APPLICATION->settings()->get("IconsDir").toString());
+    });
     connect(m_watcher.get(), &QFileSystemWatcher::fileChanged, this, &IconList::fileChanged);
 
     directoryChanged(path);
@@ -74,22 +77,7 @@ IconList::IconList(const QStringList& builtinPaths, const QString& path, QObject
     emit iconUpdated({});
 }
 
-void IconList::sortIconList()
-{
-    qDebug() << "Sorting icon list...";
-    std::sort(m_icons.begin(), m_icons.end(), [](const MMCIcon& a, const MMCIcon& b) {
-        bool aIsSubdir = a.m_key.contains(QDir::separator());
-        bool bIsSubdir = b.m_key.contains(QDir::separator());
-        if (aIsSubdir != bIsSubdir) {
-            return !aIsSubdir;  // root-level icons come first
-        }
-        return a.m_key.localeAwareCompare(b.m_key) < 0;
-    });
-    reindex();
-}
-
-// Helper function to add directories recursively
-bool IconList::addPathRecursively(const QString& path)
+bool IconList::addPath(const QString& path)
 {
     QDir dir(path);
     if (!dir.exists())
@@ -101,7 +89,7 @@ bool IconList::addPathRecursively(const QString& path)
     // Add all subdirectories
     QFileInfoList entries = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
     for (const QFileInfo& entry : entries) {
-        if (addPathRecursively(entry.absoluteFilePath())) {
+        if (m_watcher->addPath(entry.absoluteFilePath())) {
             watching = true;
         }
     }
@@ -111,15 +99,13 @@ bool IconList::addPathRecursively(const QString& path)
 QStringList IconList::getIconFilePaths() const
 {
     QStringList iconFiles{};
-    QStringList directories{ m_dir.absolutePath() };
-    while (!directories.isEmpty()) {
-        QString first = directories.takeFirst();
-        QDir dir(first);
-        for (QFileInfo& fileInfo : dir.entryInfoList(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot, QDir::Name)) {
-            if (fileInfo.isDir())
-                directories.push_back(fileInfo.absoluteFilePath());
-            else
-                iconFiles.push_back(fileInfo.absoluteFilePath());
+    for (QFileInfo& topFile : m_dir.entryInfoList(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot, QDir::Name)) {
+        if (topFile.isDir()) {
+            for (QFileInfo& subFile : QDir(topFile.filePath()).entryInfoList(QDir::Files, QDir::Name)) {
+                iconFiles.push_back(subFile.absoluteFilePath());
+            }
+        } else {
+            iconFiles.push_back(topFile.absoluteFilePath());
         }
     }
     return iconFiles;
@@ -181,8 +167,8 @@ void IconList::directoryChanged(const QString& path)
         if (m_icons[idx].type() == ToBeDeleted) {
             beginRemoveRows(QModelIndex(), idx, idx);
             m_icons.remove(idx);
-            reindex();
             endRemoveRows();
+            reindex();
         } else {
             dataChanged(index(idx), index(idx));
         }
@@ -203,8 +189,6 @@ void IconList::directoryChanged(const QString& path)
             emit iconUpdated(key);
         }
     }
-
-    sortIconList();
 }
 
 void IconList::fileChanged(const QString& path)
@@ -232,19 +216,11 @@ void IconList::fileChanged(const QString& path)
     emit iconUpdated(key);
 }
 
-void IconList::SettingChanged(const Setting& setting, const QVariant& value)
-{
-    if (setting.id() != "IconsDir")
-        return;
-
-    directoryChanged(value.toString());
-}
-
 void IconList::startWatching()
 {
     auto abs_path = m_dir.absolutePath();
     FS::ensureFolderPathExists(abs_path);
-    m_isWatching = addPathRecursively(abs_path);
+    m_isWatching = addPath(abs_path);
     if (m_isWatching) {
         qDebug() << "Started watching" << abs_path;
     } else {
@@ -346,8 +322,12 @@ void IconList::installIcon(const QString& file, const QString& name)
     if (!IconUtils::isIconSuffix(fileinfo.suffix()))
         return;
 
-    QString target = FS::PathCombine(getDirectory(), name.isEmpty() ? fileinfo.fileName() : name);
-    QFile::copy(file, target);
+    const auto target = FS::getSafePathInRoot(getDirectory(), name.isEmpty() ? fileinfo.fileName() : name);
+    if (!target.has_value()) {
+        qWarning() << "Installing icon to list -" << target.error();
+        return;
+    }
+    QFile::copy(file, target.value());
 }
 
 bool IconList::iconFileExists(const QString& key) const
@@ -444,7 +424,6 @@ void IconList::reindex()
     m_nameIndex.clear();
     for (int i = 0; i < m_icons.size(); i++) {
         m_nameIndex[m_icons[i].m_key] = i;
-        emit iconUpdated(m_icons[i].m_key);  // prevents incorrect indices with proxy model
     }
 }
 

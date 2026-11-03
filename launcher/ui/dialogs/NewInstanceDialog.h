@@ -45,6 +45,7 @@ class NewInstanceDialog;
 }
 
 class PageContainer;
+class QCheckBox;
 class QDialogButtonBox;
 class ImportPage;
 class FlamePage;
@@ -55,9 +56,9 @@ class NewInstanceDialog : public QDialog, public BasePageProvider {
    public:
     explicit NewInstanceDialog(const QString& initialGroup,
                                const QString& url = QString(),
-                               const QMap<QString, QString>& extra_info = {},
-                               QWidget* parent = 0);
-    ~NewInstanceDialog();
+                               const QMap<QString, QString>& extraInfo = {},
+                               QWidget* parent = nullptr);
+    ~NewInstanceDialog() override;
 
     void updateDialogState();
 
@@ -72,8 +73,11 @@ class NewInstanceDialog : public QDialog, public BasePageProvider {
     QList<BasePage*> getPages() override;
 
     QString instName() const;
+    bool copyTemplateDir() const;
     QString instGroup() const;
     QString iconKey() const;
+    QString instDir() const;
+    void refreshInstDirBox();
 
    public slots:
     void accept() override;
@@ -85,21 +89,28 @@ class NewInstanceDialog : public QDialog, public BasePageProvider {
     void selectedPageChanged(BasePage* previous, BasePage* selected);
 
    private:
+    void importIconNow();
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
+   private:
     Ui::NewInstanceDialog* ui = nullptr;
     PageContainer* m_container = nullptr;
     QDialogButtonBox* m_buttons = nullptr;
+    QCheckBox* m_copyTemplateDirCheckbox = nullptr;
 
-    QString InstIconKey;
-    ImportPage* importPage = nullptr;
-    std::unique_ptr<InstanceTask> creationTask;
+    QString m_instIconKey;
+    ImportPage* m_importPage = nullptr;
+    std::unique_ptr<InstanceTask> m_creationTask;
 
-    bool importIcon = false;
-    QString importIconPath;
-    QString importIconName;
+    bool m_importIcon = false;
+    QString m_importIconPath;
+    QString m_importIconName;
 
-    QString importVersion;
+    QString m_importVersion;
+
+    QString m_suggestedName;
+    bool m_nameFieldSelectedOnce = false;
+    bool m_nameFieldEditedByUser = false;
 
     QString m_searchTerm;
-
-    void importIconNow();
 };

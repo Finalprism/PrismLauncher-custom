@@ -63,8 +63,6 @@ class MinecraftInstance : public BaseInstance {
     void loadSpecificSettings() override;
 
     // FIXME: remove
-    QString typeName() const override;
-    // FIXME: remove
     QSet<QString> traits() const override;
 
     bool canEdit() const override { return true; }
@@ -82,13 +80,11 @@ class MinecraftInstance : public BaseInstance {
     QString coreModsDir() const;
     QString nilModsDir() const;
     QString dataPacksDir();
-    QString modsCacheLocation() const;
     QString libDir() const;
     QString worldDir() const;
     QString resourcesDir() const;
     QDir jarmodsPath() const;
     QDir librariesPath() const;
-    QDir versionsPath() const;
     QString instanceConfigFolder() const override;
 
     // Path to the instance's minecraft directory.

@@ -38,12 +38,10 @@
 
 #include <QtNetwork>
 
-#include <QObject>
-#include "net/NetRequest.h"
+#include "net/Request.h"
 #include "tasks/ConcurrentTask.h"
 
 // Those are included so that they are also included by anyone using NetJob
-#include "net/Download.h"
 #include "net/HttpMetaCache.h"
 
 class NetJob : public ConcurrentTask {
@@ -53,24 +51,24 @@ class NetJob : public ConcurrentTask {
     // TODO: delete
     using Ptr = shared_qobject_ptr<NetJob>;
 
-    explicit NetJob(QString job_name, QNetworkAccessManager* network, int max_concurrent = -1);
+    explicit NetJob(const QString& jobName, QNetworkAccessManager* network, int maxConcurrent = -1);
     ~NetJob() override = default;
 
     auto size() const -> int;
 
     auto canAbort() const -> bool override;
-    auto addNetAction(Net::NetRequest::Ptr action) -> bool;
+    auto addNetAction(const Net::Request::Ptr& action) -> bool;
 
-    auto getFailedActions() -> QList<Net::NetRequest*>;
+    auto getFailedActions() -> QList<Net::Request*>;
     auto getFailedFiles() -> QList<QString>;
     void setAskRetry(bool askRetry);
 
    public slots:
     // Qt can't handle auto at the start for some reason?
     bool abort() override;
-    void emitFailed(QString reason) override;
 
    protected slots:
+    void emitFailed(QString reason) override;
     void executeNextSubTask() override;
 
    protected:
@@ -81,6 +79,6 @@ class NetJob : public ConcurrentTask {
     QNetworkAccessManager* m_network;
 
     int m_try = 1;
-    bool m_ask_retry = true;
-    int m_manual_try = 0;
+    int m_maxTries = 3;
+    bool m_askRetry = true;
 };

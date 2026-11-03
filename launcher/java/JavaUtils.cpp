@@ -39,13 +39,22 @@
 #include <QStringList>
 
 #include <settings/Setting.h>
+#include <settings/SettingsObject.h>
 
 #include <QDebug>
 #include "Application.h"
 #include "BuildConfig.h"
 #include "FileSystem.h"
+#include "Json.h"
 #include "java/JavaInstallList.h"
 #include "java/JavaUtils.h"
+
+#ifdef Q_OS_WIN
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+#endif
 
 #define IBUS "@im=ibus"
 
@@ -175,7 +184,7 @@ QStringList addJavasFromEnv(QList<QString> javas)
 }
 
 #if defined(Q_OS_WIN32)
-QList<JavaInstallPtr> JavaUtils::FindJavaFromRegistryKey(DWORD keyType, QString keyName, QString keyJavaDir, QString subkeySuffix)
+QList<JavaInstallPtr> JavaUtils::FindJavaFromRegistryKey(std::uint32_t keyType, QString keyName, QString keyJavaDir, QString subkeySuffix)
 {
     QList<JavaInstallPtr> javas;
 
@@ -511,6 +520,12 @@ QList<QString> JavaUtils::FindJavaPaths()
 QString JavaUtils::getJavaCheckPath()
 {
     return APPLICATION->getJarPath("JavaCheck.jar");
+}
+
+QString JavaUtils::getPinnedPath(int major)
+{
+    auto javas = Json::toMap(APPLICATION->settings()->get("PinnedJavaPaths").toString());
+    return javas.value(QString::number(major)).toString();
 }
 
 QStringList getMinecraftJavaBundle()

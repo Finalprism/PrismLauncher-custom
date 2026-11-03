@@ -36,9 +36,12 @@
 
 #pragma once
 
+#include <QMap>
 #include <QWidget>
-#include "BaseInstance.h"
 #include "JavaCommon.h"
+
+class MinecraftInstance;
+class QLineEdit;
 
 namespace Ui {
 class JavaSettingsWidget;
@@ -49,7 +52,7 @@ class JavaSettingsWidget : public QWidget {
 
    public:
     explicit JavaSettingsWidget(QWidget* parent = nullptr) : JavaSettingsWidget(nullptr, parent) {}
-    explicit JavaSettingsWidget(BaseInstance* instance, QWidget* parent = nullptr);
+    explicit JavaSettingsWidget(MinecraftInstance* instance, QWidget* parent = nullptr);
     ~JavaSettingsWidget() override;
 
     void loadSettings();
@@ -59,10 +62,16 @@ class JavaSettingsWidget : public QWidget {
     void onJavaBrowse();
     void onJavaAutodetect();
     void onJavaTest();
+    void onJavaBrowseMajor(int major);
+    void onJavaDetectMajor(int major);
     void updateThresholds();
 
    private:
-    BaseInstance* m_instance;
+    void setupPinnedJavaRows();
+    void warnAboutUnresolvablePinnedPaths() const;
+
+    MinecraftInstance* m_instance;
     Ui::JavaSettingsWidget* m_ui;
     unique_qobject_ptr<JavaCommon::TestCheck> m_checker;
+    QMap<int, QLineEdit*> m_pinnedJavaEdits;
 };

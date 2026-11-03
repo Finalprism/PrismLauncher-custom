@@ -27,8 +27,9 @@ QString Meta::Version::descriptor() const
 }
 QString Meta::Version::name() const
 {
-    if (m_data)
+    if (m_data) {
         return m_data->name;
+    }
     return m_uid;
 }
 QString Meta::Version::typeString() const
@@ -41,9 +42,9 @@ QDateTime Meta::Version::time() const
     return QDateTime::fromMSecsSinceEpoch(m_time * 1000, Qt::UTC);
 }
 
-void Meta::Version::parse(const QJsonObject& obj)
+Result<> Meta::Version::parse(const QJsonObject& obj)
 {
-    parseVersion(obj, this);
+    return parseVersion(obj, this);
 }
 
 void Meta::Version::mergeFromList(const Meta::Version::Ptr& other)

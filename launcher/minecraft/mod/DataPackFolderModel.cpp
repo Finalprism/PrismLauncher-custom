@@ -42,17 +42,20 @@
 
 #include "minecraft/mod/tasks/LocalDataPackParseTask.h"
 
-DataPackFolderModel::DataPackFolderModel(const QString& dir, BaseInstance* instance, bool isIndexed, bool createDir, QObject* parent)
+DataPackFolderModel::DataPackFolderModel(const QString& dir, MinecraftInstance* instance, bool isIndexed, bool createDir, QObject* parent)
     : ResourceFolderModel(QDir(dir), instance, isIndexed, createDir, parent)
 {
-    m_columnNames = QStringList({ "Enable", "Image", "Name", "Pack Format", "Last Modified", "Size", "File Name" });
+    m_columnNames = QStringList({ "Enable", "Name", "Version", "Pack Format", "Last Modified", "Size", "File Name" });
     m_columnNamesTranslated =
-        QStringList({ tr("Enable"), tr("Image"), tr("Name"), tr("Pack Format"), tr("Last Modified"), tr("Size"), tr("File Name") });
-    m_columnSortKeys = { SortType::Enabled, SortType::Name, SortType::Name,    SortType::PackFormat,
+        QStringList({ "", tr("Name"), tr("Version"), tr("Pack Format"), tr("Last Modified"), tr("Size"), tr("File Name") });
+    m_columnSortKeys = { SortType::Enabled, SortType::Name, SortType::Version, SortType::PackFormat,
                          SortType::Date,    SortType::Size, SortType::Filename };
-    m_columnResizeModes = { QHeaderView::Interactive, QHeaderView::Interactive, QHeaderView::Stretch,    QHeaderView::Interactive,
-                            QHeaderView::Interactive, QHeaderView::Interactive, QHeaderView::Interactive };
-    m_columnsHideable = { false, true, false, true, true, true, true };
+    m_columnResizeModes = { QHeaderView::Fixed,       QHeaderView::Stretch,          QHeaderView::Interactive,
+                            QHeaderView::Interactive, QHeaderView::ResizeToContents, QHeaderView::Interactive,
+                            QHeaderView::Interactive };
+    m_columnsHideable = {
+        false, false, true, true, true, true, true,
+    };
 }
 
 QVariant DataPackFolderModel::data(const QModelIndex& index, int role) const
@@ -77,12 +80,6 @@ QVariant DataPackFolderModel::data(const QModelIndex& index, int role) const
                 return resource.sizeStr();
             }
             break;
-        case Qt::DecorationRole: {
-            if (column == ImageColumn) {
-                return at(row).image({ 32, 32 }, Qt::AspectRatioMode::KeepAspectRatioByExpanding);
-            }
-            break;
-        }
         case Qt::ToolTipRole: {
             if (column == PackFormatColumn) {
                 //: The string being explained by this is in the format: ID (Lower version - Upper version)
@@ -90,11 +87,6 @@ QVariant DataPackFolderModel::data(const QModelIndex& index, int role) const
             }
             break;
         }
-        case Qt::SizeHintRole:
-            if (column == ImageColumn) {
-                return QSize(32, 32);
-            }
-            break;
         default:
             break;
     }
@@ -108,11 +100,11 @@ QVariant DataPackFolderModel::data(const QModelIndex& index, int role) const
         case NameColumn:
             mappedIndex = index.siblingAtColumn(ResourceFolderModel::NameColumn);
             break;
+        case VersionColumn:
+            mappedIndex = index.siblingAtColumn(ResourceFolderModel::VersionColumn);
+            break;
         case DateColumn:
             mappedIndex = index.siblingAtColumn(ResourceFolderModel::DateColumn);
-            break;
-        case ProviderColumn:
-            mappedIndex = index.siblingAtColumn(ResourceFolderModel::ProviderColumn);
             break;
         case FileNameColumn:
             mappedIndex = index.siblingAtColumn(ResourceFolderModel::FileNameColumn);
@@ -131,6 +123,25 @@ QVariant DataPackFolderModel::data(const QModelIndex& index, int role) const
     return {};
 }
 
+QList<MultiDecorationItemDelegate::Icon> DataPackFolderModel::icons(int row) const
+{
+    auto result = ResourceFolderModel::icons(row);
+    static const QSize s_iconSize = { 32, 32 };
+
+    if (m_showImages) {
+        QIcon icon;
+        if (const auto pixmap = at(row).image(s_iconSize, Qt::KeepAspectRatio); !pixmap.isNull()) {
+            icon = pixmap;
+        } else {
+            icon = QIcon::fromTheme("datapacks");
+        }
+
+        result.prepend({ .icon = icon, .size = s_iconSize });
+    }
+
+    return result;
+}
+
 QVariant DataPackFolderModel::headerData(int section, [[maybe_unused]] Qt::Orientation orientation, int role) const
 {
     switch (role) {
@@ -138,9 +149,9 @@ QVariant DataPackFolderModel::headerData(int section, [[maybe_unused]] Qt::Orien
             switch (section) {
                 case ActiveColumn:
                 case NameColumn:
+                case VersionColumn:
                 case PackFormatColumn:
                 case DateColumn:
-                case ImageColumn:
                 case SizeColumn:
                 case FileNameColumn:
                     return columnNames().at(section);
@@ -154,6 +165,8 @@ QVariant DataPackFolderModel::headerData(int section, [[maybe_unused]] Qt::Orien
                     return tr("Is the data pack enabled? (Only valid for ZIPs)");
                 case NameColumn:
                     return tr("The name of the data pack.");
+                case VersionColumn:
+                    return tr("The version of the data pack.");
                 case PackFormatColumn:
                     //: The string being explained by this is in the format: ID (Lower version - Upper version)
                     return tr("The data pack format ID, as well as the Minecraft versions it was designed for.");
@@ -166,11 +179,6 @@ QVariant DataPackFolderModel::headerData(int section, [[maybe_unused]] Qt::Orien
                 default:
                     return {};
             }
-        case Qt::SizeHintRole:
-            if (section == ImageColumn) {
-                return QSize(64, 0);
-            }
-            return {};
         default:
             return {};
     }

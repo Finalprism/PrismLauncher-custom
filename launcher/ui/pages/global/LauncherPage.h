@@ -66,13 +66,17 @@ class LauncherPage : public QWidget, public BasePage {
    private:
     void applySettings();
     void loadSettings();
+    bool confirmInstanceDirPath(const QString& rawDir, const QString& cookedDir);
 
    private slots:
     void on_instDirBrowseBtn_clicked();
+    void on_addInstDirBtn_clicked();
+    void on_removeInstDirBtn_clicked();
     void on_modsDirBrowseBtn_clicked();
     void on_iconsDirBrowseBtn_clicked();
     void on_downloadsDirBrowseBtn_clicked();
     void on_javaDirBrowseBtn_clicked();
+    void on_templateDirBrowseBtn_clicked();
     void on_skinsDirBrowseBtn_clicked();
     void on_metadataEnableBtn_clicked();
 

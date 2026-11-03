@@ -40,27 +40,25 @@
 
 #pragma once
 
-#include <memory>
-
 #include <QMainWindow>
 #include <QProcess>
 #include <QTimer>
 
-#include "BaseInstance.h"
 #include "minecraft/auth/MinecraftAccount.h"
 
+class EditableLabel;
 class LaunchController;
 class NewsChecker;
+class QLabel;
+class QTextEdit;
 class QToolButton;
 class InstanceProxyModel;
-class LabeledToolButton;
-class QLabel;
+class MinecraftInstance;
 class MinecraftLauncher;
 class BaseProfilerFactory;
 class InstanceView;
 class KonamiCode;
 class InstanceTask;
-class LabeledToolButton;
 
 namespace Ui {
 class MainWindow;
@@ -119,6 +117,7 @@ class MainWindow : public QMainWindow {
     void on_actionViewIconsFolder_triggered();
     void on_actionViewLogsFolder_triggered();
     void on_actionViewJavaFolder_triggered();
+    void on_actionViewTemplateFolder_triggered();
 
     void on_actionViewSkinsFolder_triggered();
 
@@ -221,9 +220,11 @@ class MainWindow : public QMainWindow {
    private:
     void retranslateUi();
 
+    void updateInstanceToolBarOrientation(Qt::Orientation orientation);
+
     void addInstance(const QString& url = QString(), const QMap<QString, QString>& extra_info = {});
-    void activateInstance(BaseInstance* instance);
     void setCatBackground(bool enabled);
+    void updateCatState();
     void updateInstanceToolIcon(QString new_icon);
     void setSelectedInstanceById(const QString& id);
     void updateStatusCenter();
@@ -231,6 +232,8 @@ class MainWindow : public QMainWindow {
 
     void runModalTask(Task* task);
     void instanceFromInstanceTask(InstanceTask* task);
+
+    void handleInstanceRename(const QString& before, const QString& after);
 
    private:
     Ui::MainWindow* ui;
@@ -240,16 +243,16 @@ class MainWindow : public QMainWindow {
     QToolButton* newsLabel = nullptr;
     QLabel* m_statusLeft = nullptr;
     QLabel* m_statusCenter = nullptr;
-    LabeledToolButton* changeIconButton = nullptr;
-    LabeledToolButton* renameButton = nullptr;
+    QToolButton* m_changeIconButton = nullptr;
+    QAction* m_instanceToolBarTopSeparator = nullptr;
+    QAction* m_instanceInfoWidget = nullptr;
+    EditableLabel* m_nameLabel = nullptr;
     QToolButton* helpMenuButton = nullptr;
     KonamiCode* secretEventFilter = nullptr;
 
-    std::shared_ptr<Setting> instanceToolbarSetting = nullptr;
-
     unique_qobject_ptr<NewsChecker> m_newsChecker;
 
-    BaseInstance* m_selectedInstance = nullptr;
+    MinecraftInstance* m_selectedInstance = nullptr;
     QString m_currentInstIcon;
 
     // managed by the application object

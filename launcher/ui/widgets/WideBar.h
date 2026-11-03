@@ -5,8 +5,6 @@
 #include <QMenu>
 #include <QToolBar>
 
-#include <memory>
-
 class WideBar : public QToolBar {
     Q_OBJECT
     // Why: so we can enable / disable alt shortcuts in toolbuttons
@@ -22,21 +20,12 @@ class WideBar : public QToolBar {
     void addSeparator();
 
     void insertSpacer(QAction* action);
-    void insertSeparator(QAction* before);
+    QAction* insertSeparator(QAction* before);
     void insertActionBefore(QAction* before, QAction* action);
     void insertActionAfter(QAction* after, QAction* action);
-    void insertWidgetBefore(QAction* before, QWidget* widget);
+    QAction* insertWidgetBefore(QAction* before, QWidget* widget);
 
     QMenu* createContextMenu(QWidget* parent = nullptr, const QString& title = QString());
-    void showVisibilityMenu(const QPoint&);
-
-    void addContextMenuAction(QAction* action);
-
-    // Ideally we would use a QBitArray for this, but it doesn't support string conversion,
-    // so using it in settings is very messy.
-
-    QByteArray getVisibilityState() const;
-    void setVisibilityState(QByteArray&&);
 
     void removeAction(QAction* action);
 
@@ -49,18 +38,8 @@ class WideBar : public QToolBar {
 
     auto getMatching(QAction* act) -> QList<BarEntry>::iterator;
 
-    /** Used to distinguish between versions of the WideBar with different actions */
-    QByteArray getHash() const;
-    bool checkHash(QByteArray const&) const;
-
    private:
     QList<BarEntry> m_entries;
 
-    QList<QAction*> m_context_menu_actions;
-
     bool m_use_default_action = false;
-
-    // Menu to toggle visibility from buttons in the bar
-    std::unique_ptr<QMenu> m_bar_menu = nullptr;
-    enum class MenuState { Fresh, Dirty } m_menu_state = MenuState::Dirty;
 };

@@ -14,7 +14,6 @@
         <file>scalable/externaltools.svg</file>
         <file>scalable/help.svg</file>
         <file>scalable/instance-settings.svg</file>
-        <file>scalable/jarmods.svg</file>
         <file>scalable/java.svg</file>
         <file>scalable/language.svg</file>
         <file>scalable/loadermods.svg</file>
@@ -32,6 +31,8 @@
         <file>scalable/status-bad.svg</file>
         <file>scalable/status-good.svg</file>
         <file>scalable/status-yellow.svg</file>
+        <file>scalable/status-locked.svg</file>
+        <file>scalable/status-linked.svg</file>
         <file>scalable/viewfolder.svg</file>
         <file>scalable/worlds.svg</file>
         <file>scalable/delete.svg</file>
@@ -40,6 +41,7 @@
         <file>scalable/rename.svg</file>
         <file>scalable/launch.svg</file>
         <file>scalable/shortcut.svg</file>
+        <file>scalable/star.svg</file>
         <file>scalable/server.svg</file>
         <file>scalable/appearance.svg</file>
     </qresource>

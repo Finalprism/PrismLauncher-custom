@@ -16,8 +16,10 @@
 #pragma once
 
 #include <QAbstractListModel>
+#include <cstdint>
 
 #include "BaseEntity.h"
+#include "Result.h"
 #include "meta/VersionList.h"
 #include "net/Mode.h"
 
@@ -32,7 +34,7 @@ class Index : public QAbstractListModel, public BaseEntity {
     explicit Index(const QList<VersionList::Ptr>& lists, QObject* parent = nullptr);
     virtual ~Index() = default;
 
-    enum { UidRole = Qt::UserRole, NameRole, ListPtrRole };
+    enum Roles : std::uint16_t { UidRole = Qt::UserRole, NameRole, ListPtrRole };
 
     QVariant data(const QModelIndex& index, int role) const override;
     int rowCount(const QModelIndex& parent) const override;
@@ -57,7 +59,7 @@ class Index : public QAbstractListModel, public BaseEntity {
     void merge(const std::shared_ptr<Index>& other);
 
    protected:
-    void parse(const QJsonObject& obj) override;
+    Result<> parse(const QJsonObject& obj) override;
 
    private:
     QList<VersionList::Ptr> m_lists;

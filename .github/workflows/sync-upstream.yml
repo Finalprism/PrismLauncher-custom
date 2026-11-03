@@ -1,0 +1,65 @@
+name: 同步上游更新
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "同步目标：上游标签（如 11.2.0）或分支名（如 develop），留空自动取最新稳定标签"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码（完整历史）
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 配置上游与提交身份
+        run: |
+          git remote add upstream https://github.com/PrismLauncher/PrismLauncher.git 2>/dev/null \
+            || git remote set-url upstream https://github.com/PrismLauncher/PrismLauncher.git
+          git fetch upstream --tags
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: 确定同步目标
+        id: target
+        env:
+          TARGET_REF: ${{ github.event.inputs.ref }}
+        run: |
+          TARGET="$TARGET_REF"
+          if [ -z "$TARGET" ]; then
+            TARGET=$(git tag -l | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
+          fi
+          if ! git rev-parse --verify "$TARGET^{commit}" >/dev/null 2>&1; then
+            echo "::error::上游不存在目标 $TARGET（标签或分支名拼写是否正确？）"
+            exit 1
+          fi
+          echo "ref=$TARGET" >> "$GITHUB_OUTPUT"
+          echo "同步目标：$TARGET"
+
+      - name: 合并上游到当前分支
+        id: merge
+        run: |
+          if git merge "${{ steps.target.outputs.ref }}" --no-edit; then
+            echo "merged=true" >> "$GITHUB_OUTPUT"
+            echo "合并完成，新 HEAD：$(git log --oneline -1)"
+          else
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            echo "::error::存在合并冲突，已中止合并（分支保持原状）。冲突文件如下，请本地解决后重试："
+            git diff --name-only --diff-filter=U
+            git merge --abort
+            exit 1
+          fi
+
+      - name: 推送到本仓库
+        if: steps.merge.outputs.merged == 'true'
+        run: |
+          git push origin HEAD
+          echo "已推送，本次同步完成。"

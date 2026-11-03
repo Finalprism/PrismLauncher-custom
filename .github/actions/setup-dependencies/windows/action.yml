@@ -34,7 +34,7 @@ runs:
         java-version: 17
 
     - name: Setup vcpkg cache (MSVC)
-      if: ${{ inputs.msystem == '' && inputs.build-type == 'Debug' }}
+      if: ${{ inputs.msystem == '' }}
       shell: pwsh
       env:
         USERNAME: ${{ github.repository_owner }}

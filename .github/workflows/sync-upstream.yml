@@ -171,9 +171,12 @@ jobs:
           VERSION: ${{ steps.meta.outputs.version }}
           NOTES: ${{ steps.meta.outputs.notes }}
         run: |
-          gh release delete "$TAG" --repo "${{ github.repository }}" -y 2>/dev/null || true
-          gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/$TAG" 2>/dev/null || true
-          gh release create "$TAG" dist/* \
+          gh release delete "$TAG" --repo "${{ github.repository }}" -y >/dev/null 2>&1 || true
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/$TAG" >/dev/null 2>&1 || true
+          cd dist
+          zip -r "../PrismLauncher-$VERSION-yggdrasil.zip" .
+          cd ..
+          gh release create "$TAG" "PrismLauncher-$VERSION-yggdrasil.zip" \
             --repo "${{ github.repository }}" \
             --title "Prism Launcher $VERSION（Yggdrasil 定制版）" \
             --notes "$NOTES"

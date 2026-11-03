@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  packages: write
 
 jobs:
   sync:
@@ -63,3 +65,11 @@ jobs:
         run: |
           git push origin HEAD
           echo "已推送，本次同步完成。"
+
+  build:
+    name: 同步后自动构建
+    needs: sync
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      build-type: Release

@@ -9,6 +9,8 @@
 
 #include "YggdrasilAuthStep.h"
 
+#include "minecraft/auth/Parsers.h"
+
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -43,7 +45,7 @@ void YggdrasilAuthStep::perform()
         }
         QJsonObject agent;
         agent["name"] = "Minecraft";
-        agent["version"] = "1.0";
+        agent["version"] = 1;
         payload["agent"] = agent;
         payload["username"] = m_data->yggdrasilToken.extra.value("userName").toString();
         payload["password"] = m_data->yggdrasilPassword;
@@ -80,6 +82,8 @@ void YggdrasilAuthStep::onRequestFinished()
             failWith(AccountTaskState::STATE_FAILED_HARD, tr("用户名或密码错误（HTTP %1）。").arg(status));
         } else if (status >= 500) {
             failWith(AccountTaskState::STATE_OFFLINE, tr("认证服务器错误（HTTP %1）。").arg(status));
+        } else if (!body.isEmpty()) {
+            failWith(AccountTaskState::STATE_FAILED_HARD, QString::fromUtf8(body.left(300)));
         } else {
             failWith(AccountTaskState::STATE_OFFLINE, reply->errorString());
         }
@@ -138,11 +142,39 @@ void YggdrasilAuthStep::succeedWith(const QJsonObject& root)
     m_data->minecraftEntitlement.canPlayMinecraft = true;
     m_data->minecraftEntitlement.validity = Validity::Certain;
 
-    emit finished(AccountTaskState::STATE_SUCCEEDED, tr("已登录外置认证服务器。"));
+    // Mojang's sessionserver knows nothing about external-auth UUIDs; pull
+    // textures from the auth server's own sessionserver (best effort).
+    QNetworkRequest profileReq{ QUrl(m_data->yggdrasilServer +
+                                      QStringLiteral("/sessionserver/session/minecraft/profile/") + profileId) };
+    m_reply = m_nam.get(profileReq);
+    connect(m_reply, &QNetworkReply::finished, this, &YggdrasilAuthStep::onProfileFinished);
 }
 
 void YggdrasilAuthStep::failWith(AccountTaskState state, const QString& message)
 {
     qWarning() << "YggdrasilAuthStep:" << message;
     emit finished(state, message);
+}
+
+void YggdrasilAuthStep::onProfileFinished()
+{
+    if (m_reply) {
+        const auto err = m_reply->error();
+        auto body = m_reply->readAll();
+        const int status = m_reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        m_reply->deleteLater();
+        m_reply = nullptr;
+        if (err == QNetworkReply::OperationCanceledError) {
+            failWith(AccountTaskState::STATE_OFFLINE, tr("已取消。"));
+            return;
+        }
+        if (err == QNetworkReply::NoError && status == 200 &&
+            Parsers::parseMinecraftProfileMojang(body, m_data->minecraftProfile)) {
+            m_data->minecraftProfile.validity = Validity::Certain;
+        } else {
+            qWarning() << "YggdrasilAuthStep: sessionserver profile fetch failed (status" << status
+                       << "), skin stays default";
+        }
+    }
+    emit finished(AccountTaskState::STATE_SUCCEEDED, tr("已登录外置认证服务器。"));
 }

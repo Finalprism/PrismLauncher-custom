@@ -30,7 +30,7 @@
 namespace {
 constexpr const char* kDefaultServer = "https://littleskin.cn/api/yggdrasil";
 
-/** Fire-and-forget: fetch authlib-injector.jar (via BMCLAPI mirror) into the data root. */
+/** Fire-and-forget: fetch authlib-injector.jar (from Maven Central) into the data root. */
 void downloadAuthlibInjector()
 {
     const QString jarPath = FS::PathCombine(APPLICATION->dataRoot(), QStringLiteral("authlib-injector.jar"));
@@ -38,7 +38,7 @@ void downloadAuthlibInjector()
         return;
 
     auto* nam = new QNetworkAccessManager(qApp);
-    QNetworkRequest metaReq{ QUrl(QStringLiteral("https://bmclapi2.bangbang93.com/maven/authlib-injector/maven-metadata.xml")) };
+    QNetworkRequest metaReq{ QUrl(QStringLiteral("https://repo.maven.apache.org/maven2/org/glavo/hmcl/authlib-injector/maven-metadata.xml")) };
     auto* metaReply = nam->get(metaReq);
     QObject::connect(metaReply, &QNetworkReply::finished, nam, [nam, metaReply, jarPath] {
         metaReply->deleteLater();
@@ -57,7 +57,7 @@ void downloadAuthlibInjector()
             return;
         }
         const QString ver = m.captured(1);
-        QNetworkRequest jarReq{ QUrl(QStringLiteral("https://bmclapi2.bangbang93.com/maven/authlib-injector/%1/authlib-injector-%1.jar").arg(ver)) };
+        QNetworkRequest jarReq{ QUrl(QStringLiteral("https://repo.maven.apache.org/maven2/org/glavo/hmcl/authlib-injector/%1/authlib-injector-%1.jar").arg(ver)) };
         auto* jarReply = nam->get(jarReq);
         QObject::connect(jarReply, &QNetworkReply::finished, nam, [nam, jarReply, jarPath] {
             jarReply->deleteLater();

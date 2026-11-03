@@ -33,6 +33,7 @@ class YggdrasilAuthStep : public AuthStep {
 
    private slots:
     void onRequestFinished();
+    void onProfileFinished();
 
    private:
     void succeedWith(const QJsonObject& root);

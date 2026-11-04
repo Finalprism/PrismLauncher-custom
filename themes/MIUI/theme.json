@@ -1,0 +1,22 @@
+{
+  "name": "miuix",
+  "widgets": "windows11",
+  "qssFilePath": "miuix.qss",
+  "colors": {
+    "Window": "#17171a",
+    "WindowText": "#e8e8ea",
+    "Base": "#1b1b1f",
+    "AlternateBase": "#202024",
+    "ToolTipBase": "#2b2b30",
+    "ToolTipText": "#e8e8ea",
+    "Text": "#e8e8ea",
+    "Button": "#2b2b30",
+    "ButtonText": "#e8e8ea",
+    "BrightText": "#ffffff",
+    "Link": "#3482ff",
+    "Highlight": "#3482ff",
+    "HighlightedText": "#ffffff",
+    "fadeColor": "#17171a",
+    "fadeAmount": 0.5
+  }
+}

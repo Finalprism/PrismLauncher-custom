@@ -20,7 +20,7 @@ jobs:
       target: ${{ steps.target.outputs.ref }}
     steps:
       - name: 检出代码（完整历史）
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -127,10 +127,10 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: 检出仓库（获取主题等仓库文件）
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 下载构建产物
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: PrismLauncher-*-Portable-*
           path: dist

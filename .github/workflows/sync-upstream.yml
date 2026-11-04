@@ -126,6 +126,9 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
+      - name: 检出仓库（获取主题等仓库文件）
+        uses: actions/checkout@v4
+
       - name: 下载构建产物
         uses: actions/download-artifact@v4
         with:
@@ -174,6 +177,9 @@ jobs:
         run: |
           gh release delete "$TAG" --repo "${{ github.repository }}" -y >/dev/null 2>&1 || true
           gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/$TAG" >/dev/null 2>&1 || true
+          mkdir -p dist/UserData/themes
+          cp -r themes/MIUI dist/UserData/themes/
+          cp -r themes/MIUI dist/
           cd dist
           zip -r "../PrismLauncher-$VERSION-yggdrasil.zip" .
           cd ..
